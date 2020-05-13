@@ -1,12 +1,14 @@
 module Api
   module V1
     class ProductsController < ApplicationController
+      scope :in_stock, -> {  where("inventory > ?", 0).order(:cost)  }
+      scope :out_of_stock, -> {  where("inventory = ?", 0).order(:cost)  }
+
       def index
         if params[:order_id].present?
-          product_ids = OrderProduct.where(order_id: params[:order_id]).pluck(:product_id)
-          @products = Product.find(product_ids)
+          @products = Order.find(params[:order_id]).products
         else
-          @products = Product.where("inventory > ?", 0).order(:cost)
+          @products = Product.in_stock
         end
 
         render json: @products
@@ -19,8 +21,7 @@ module Api
       end
 
       def create
-        @order = Order.find(params[:order_id])
-        @order_product = OrderProduct.new(order_id: @order.id, product_id: order_product_params[:product_id])
+        @order_product = OrderProduct.new(order_id: params[:order_id], product_id: order_product_params[:product_id])
 
         if @order_product.save
           render json: @order, status: :created, location: api_v1_order_url(@order)
