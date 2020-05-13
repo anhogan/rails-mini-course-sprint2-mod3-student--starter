@@ -3,8 +3,7 @@ module Api
     class ProductsController < ApplicationController
       def index
         if params[:order_id].present?
-          product_ids = OrderProduct.where(order_id: params[:order_id]).pluck(:product_id)
-          @products = Product.find(product_ids)
+          @products = Order.find(params[:order_id]).products
         else
           @products = Product.where("inventory > ?", 0).order(:cost)
         end
